@@ -1,8 +1,10 @@
 package jp.ac.titech.itpro.sdl.die;
 
 import android.opengl.GLSurfaceView;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,6 +18,13 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     private Cube cube;
     private Pyramid pyramid;
+
+    private Thread thread;
+    private int seed = 0;
+    private int dx = 0;
+    private int dy = 0;
+    private int dz = 0;
+    private boolean isLoop = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,11 +43,66 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         seekBarY.setOnSeekBarChangeListener(this);
         seekBarZ.setOnSeekBarChangeListener(this);
 
+        while(seed == 0) seed = (int)(Math.random() * 10);
+        while(dx == 0) dx = getRandDiff();
+        while(dy == 0) dy = getRandDiff();
+        while(dz == 0) dz = getRandDiff();
+
         renderer = new SimpleRenderer();
         cube = new Cube();
         pyramid = new Pyramid();
         renderer.setObj(cube);
         glView.setRenderer(renderer);
+    }
+
+    private int getRandDiff(){
+        int rand = (int)(Math.random() * seed);
+        rand *= Math.random() > 0.5 ? -1 : 1;
+        return rand;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(thread != null){
+            isLoop = false;
+            thread = null;
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        isLoop = true;
+        final Handler handler = new Handler(Looper.getMainLooper());
+        thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(isLoop) {
+                    final SeekBar seekBarX = findViewById(R.id.seekbar_x);
+                    final SeekBar seekBarY = findViewById(R.id.seekbar_y);
+                    final SeekBar seekBarZ = findViewById(R.id.seekbar_z);
+                    final int nx = ((seekBarX.getProgress() + dx) + 360) % 360;
+                    final int ny = ((seekBarY.getProgress() + dy) + 360) % 360;
+                    final int nz = ((seekBarZ.getProgress() + dz) + 360) % 360;
+
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            seekBarX.setProgress(nx);
+                            seekBarY.setProgress(ny);
+                            seekBarZ.setProgress(nz);
+                        }
+                    });
+                    try {
+                        Thread.sleep(10);
+                    }catch(InterruptedException e){
+
+                    }
+                }
+            }
+        });
+        thread.start();
     }
 
     @Override
