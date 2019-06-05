@@ -136,6 +136,17 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         case R.id.menu_pyramid:
             renderer.setObj(pyramid);
             break;
+        case R.id.menu_reload:
+            if(thread != null){
+                isLoop = false;
+                seed = dx = dy = dz = 0;
+                while(seed == 0) seed = (int)(Math.random() * 10);
+                while(dx == 0) dx = getRandDiff();
+                while(dy == 0) dy = getRandDiff();
+                while(dz == 0) dz = getRandDiff();
+                isLoop = true;
+            }
+            break;
         }
         return true;
     }
